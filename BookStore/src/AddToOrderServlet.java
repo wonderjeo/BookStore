@@ -26,6 +26,33 @@ import org.me.webapps.bookstore.BookBean;
 import org.me.webapps.bookstore.CartItemBean;
 import org.me.webapps.bookstore.Customer;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.UUID;
+
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 /**
  *
  * @author srg
@@ -79,8 +106,8 @@ public class AddToOrderServlet extends HttpServlet {
             Iterator iterator = cartItems.iterator();
             BookBean book;
             CartItemBean cartItem;
-            int quantity;
-            double price;
+            int quantity = 0;
+            double price = 0;
             StringBuilder emailMsg = new StringBuilder();
 
             
@@ -108,8 +135,11 @@ public class AddToOrderServlet extends HttpServlet {
             emailMsg.append(session.getAttribute("total"));
             emailMsg.append("\n********************************\nPlease do not reply.");
             // Assuming you are sending email from localhost
-            
-            final String emailLogin = "u3556210@connect.hku.hk";
+            //AWSS3 start
+            //
+            S3(email,quantity,price);
+            //AWSS3 end
+            final String emailLogin = "wangdezhao123@gmail.com";
             final String emailPassword = "w1996d01z16";
             
             String emailHost = "smtp.gmail.com";
@@ -157,6 +187,7 @@ public class AddToOrderServlet extends HttpServlet {
             }catch (MessagingException mex) {
             }
         }
+        
         dispatcher = request.getRequestDispatcher( "/process.jsp" );
         dispatcher.forward( request, response );
     }
@@ -170,4 +201,46 @@ public class AddToOrderServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+    
+    public void S3(String email, int quantity, double price) throws IOException{
+        AWSCredentials credentials = null;
+        try {
+            credentials = new ProfileCredentialsProvider().getCredentials();
+        } catch (Exception e) {
+            throw new AmazonClientException(
+                    "Cannot load the credentials from the credential profiles file. " +
+                    "Please make sure that your credentials file is at the correct " +
+                    "location (~/.aws/credentials), and is in valid format.",
+                    e);
+        }
+
+        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+            .withCredentials(new AWSStaticCredentialsProvider(credentials))
+            .withRegion("us-west-2")
+            .build();
+        
+        String bucketName = "dezhao-bucket";
+        String key = "MyObjectKey";
+
+        System.out.println("===========================================");
+        System.out.println("Getting Started with Amazon S3");
+        System.out.println("===========================================\n");
+        
+        System.out.println("Uploading a new object to S3 from a file\n");
+        s3.putObject(new PutObjectRequest(bucketName, key, createSampleFile(email, quantity, price)));
+    }
+    
+    private static File createSampleFile(String email, int quantity, double price) throws IOException {
+        File file = File.createTempFile("aws-java-sdk-", ".txt");
+        file.deleteOnExit();
+
+        Writer writer = new OutputStreamWriter(new FileOutputStream(file));
+        writer.write("email\t\tquantity\ttotal price\n");
+        writer.write(email+"\t");
+        writer.write(quantity+"\t");
+        writer.write(price+"\t");
+        writer.close();
+
+        return file;
+    }
 }
