@@ -216,7 +216,7 @@ public class AddToOrderServlet extends HttpServlet {
 
         AmazonS3 s3 = AmazonS3ClientBuilder.standard()
             .withCredentials(new AWSStaticCredentialsProvider(credentials))
-            .withRegion("us-west-2")
+            .withRegion("us-east-1")
             .build();
         
         String bucketName = "dezhao-bucket";
