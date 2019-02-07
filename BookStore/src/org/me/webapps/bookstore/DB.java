@@ -16,7 +16,7 @@ public class DB {
     private DB() {}
     
     private static final String JDBC_DRIVER = "org.apache.derby.jdbc.ClientDriver";
-    private static final String JDBC_URL = "jdbc:derby://ec2-3-94-55-235.compute-1.amazonaws.com:1527/BookStore";
+    private static final String JDBC_URL = "jdbc:derby://ec2-18-212-2-145.compute-1.amazonaws.com:1527/BookStore";
     private static final String JDBC_USER = "book";
     private static final String JDBC_PASS = "book";
     public static Connection getConnection() throws ClassNotFoundException, SQLException {
